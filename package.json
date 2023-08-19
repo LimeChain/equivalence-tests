@@ -1,0 +1,23 @@
+{
+  "name": "equivalence-tests",
+  "version": "1.0.0",
+  "description": "Testing whether Hedera behaves in an Ethereum equivalent way",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/LimeChain/equivalence-tests.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/LimeChain/equivalence-tests/issues"
+  },
+  "homepage": "https://github.com/LimeChain/equivalence-tests#readme",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^3.0.0",
+    "hardhat": "^2.17.1"
+  }
+}
