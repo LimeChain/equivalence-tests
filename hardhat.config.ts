@@ -27,7 +27,7 @@ const config: HardhatUserConfig = {
       timeout: 60_000,
       chainId: 1337,
       accounts: [
-        // private keys are configured in the genesis file 
+        // private keys are configured in the genesis file https://github.com/hyperledger/besu/blob/main/config/src/main/resources/dev.json#L20
         // private key for 0xf17f52151EbEF6C7334FAD080c5704D77216b732
         "ae6ae8e5ccbfb04590405997ee2d52d2b330726137b875053c36d94e974d162f",
         // private key for 0x627306090abaB3A6e1400e9345bC60c78a8BEf57
