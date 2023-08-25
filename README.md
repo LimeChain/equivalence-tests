@@ -20,7 +20,7 @@ Use tools which are supported by both Hedera and Ethereum native environments an
 2. A locally running instance of a Besu node
     
     ```
-    docker run -p 8545:8545 -p 8546:8546 hyperledger/besu:latest --miner-enabled --miner-coinbase fe3b557e8fb62b89f4916b721be55ceb828dbd73 --rpc-ws-enabled --network=dev --rpc-http-enabled
+    docker run -p 8545:8545 -p 8546:8546 hyperledger/besu:latest --miner-enabled --miner-coinbase fe3b557e8fb62b89f4916b721be55ceb828dbd73 --network=dev --host-allowlist="*" --rpc-http-cors-origins=all --rpc-http-enabled  --rpc-http-api DEBUG,ETH,NET,WEB3
     ```
     
 3. A Hardhat project that can connect to both environments - this project
