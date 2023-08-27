@@ -150,7 +150,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
 
     console.log(rc);
 
-    const responseEvent = rc.events?.find((event) => event.event === "Response");
+    const responseEvent = rc.events?.find((event: any) => event.event === "Response");
 
     expect(responseEvent).to.not.be.eq(undefined);
     expect(responseEvent?.args!.success).to.be.eq(true);
@@ -164,7 +164,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
 
     const rc = await tx.wait();
 
-    const responseEvent = rc.events?.find((event) => event.event === "Response");
+    const responseEvent = rc.events?.find((event: any) => event.event === "Response");
 
     expect(responseEvent).to.not.be.eq(undefined);
     expect(responseEvent?.args!.success).to.be.eq(false);
