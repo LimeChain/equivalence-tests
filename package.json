@@ -4,7 +4,9 @@
   "description": "Testing whether Hedera behaves in an Ethereum equivalent way",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start:besu": "docker run -p 8545:8545 -p 8546:8546 hyperledger/besu:latest --miner-enabled --miner-coinbase fe3b557e8fb62b89f4916b721be55ceb828dbd73 --network=dev --host-allowlist='*' --rpc-http-cors-origins=all --rpc-http-enabled  --rpc-http-api DEBUG,ETH,NET,WEB3",
+    "test:hedera": "npx hardhat test --network hedera_local",
+    "test:besu": "npx hardhat test --network besu_local"
   },
   "repository": {
     "type": "git",
@@ -19,5 +21,10 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^3.0.0",
     "hardhat": "^2.17.1"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.9.3",
+    "i": "^0.3.7",
+    "npm": "^9.8.1"
   }
 }
