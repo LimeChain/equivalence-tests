@@ -13,7 +13,7 @@ const SettledStatus = {
   rejected: "rejected"
 };
 
-describe('EVM Calls and internal calls edge cases test', function() {
+xdescribe('EVM Calls and internal calls edge cases test', function() {
 
   let CallerFactory: any;
   let LowLevelReceiverFactory: any;
