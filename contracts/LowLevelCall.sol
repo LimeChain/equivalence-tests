@@ -34,12 +34,11 @@ contract Caller {
     function testCallFooWithWrongAbi(address payable _addr) public payable {
         // You can send ether and specify a custom gas amount
 
-        
+            //Add fake 3rd parameter
             (bool success, bytes memory data) = _addr.call{value: msg.value, gas: 20_000}(
                 abi.encodeWithSignature('foo(string,uint256,uint256)', 'call foo', 123, 0)
             );
-            // uint256 result = abi.decode(data, (uint256));
-            // emit ResponseUint(true, result);
+
             emit Response(success, data);
         
     }
