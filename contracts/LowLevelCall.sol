@@ -31,6 +31,19 @@ contract Caller {
     event Response(bool indexed success, bytes data);
     event ResponseUint(bool indexed success, uint indexed result);
 
+    function testCallFooWithWrongAbi(address payable _addr) public payable {
+        // You can send ether and specify a custom gas amount
+
+        
+            (bool success, bytes memory data) = _addr.call{value: msg.value, gas: 20_000}(
+                abi.encodeWithSignature('foo(string,uint256,uint256)', 'call foo', 123, 0)
+            );
+            // uint256 result = abi.decode(data, (uint256));
+            // emit ResponseUint(true, result);
+            emit Response(success, data);
+        
+    }
+
     // 87ba6179
     function testCallFoo(address payable _addr) public payable {
         // You can send ether and specify a custom gas amount
@@ -60,6 +73,18 @@ contract Caller {
         (bool success, bytes memory data) = _addr.call{value: msg.value}(abi.encodeWithSignature('doesNotExist()'));
 
         emit Response(success, data);
+    }
+
+    // Calling a function that transfers sent value to a recipient via SEND
+    function testSend(address payable _addr) public payable {
+        bool success = _addr.send(msg.value);
+
+        emit Response(success, "");
+    }
+
+    // Calling a function that transfers sent value to a recipient via TRANSFER
+    function testTransfer(address payable _addr) public payable {
+        _addr.transfer(msg.value);
     }
 
     // https://stackoverflow.com/a/73335577/10261711
