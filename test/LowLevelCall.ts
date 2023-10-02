@@ -46,7 +46,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
     await sleep(3000);
   });
 
-  xit('should be able to make a call with value to incorrect ABI via nested contract call', async function() {
+  it('should be able to make a call with value to incorrect ABI via nested contract call', async function() {
     // attaching the receiver contract to the caller contract factory will try to call the function testCallFooWithWrongAbi and pass value
     const fakeCaller = CallerFactory.attach(receiverAddress);
 
@@ -59,7 +59,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
     expect(rc.status).to.be.eq(1);
   });
 
-  xit('should be able to make a call to incorrect ABI via nested contract call', async function() {
+  it('should be able to make a call to incorrect ABI via nested contract call', async function() {
     // attaching the receiver contract to the caller contract factory will try to call the function testCallFooWithWrongAbi
     const fakeCaller = CallerFactory.attach(receiverAddress);
 
@@ -72,7 +72,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
     expect(rc.status).to.be.eq(1);
   });
 
-  xit('should be able to make a contract TRANSFER to a non-existing contract', async function() {
+  it('should be able to make a contract TRANSFER to a non-existing contract', async function() {
     const tx = await callerContract.testTransfer(nonExistentAddress, {gasLimit: 1000000});
 
     console.log("tx hash: ", tx.hash);
@@ -82,7 +82,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
     expect(rc.status).to.be.eq(1);
   });
 
-  xit('should be able to make a contract SEND to a non-existing contract', async function() {
+  it('should be able to make a contract SEND to a non-existing contract', async function() {
     const tx = await callerContract.testSend(nonExistentAddress, {value: 1000000});
 
     console.log("tx hash: ", tx.hash);
@@ -92,7 +92,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
     expect(rc.status).to.be.eq(1);
   });
 
-  xit('should be able to make a contract CALL WITH VALUE to a non-existing contract', async function() {
+  it('should be able to make a contract CALL WITH VALUE to a non-existing contract', async function() {
 
     const tx = await callerContract.testCallDoesNotExist(nonExistentAddress);
 
@@ -103,7 +103,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
     expect(rc.status).to.be.eq(1);
   });
 
-  xit('should be able to top-level TRANSFER to an EXISTING account', async function() {
+  it('should be able to top-level TRANSFER to an EXISTING account', async function() {
     
     const [owner, operator] = await ethers.getSigners();
     const tx = await owner.sendTransaction({
@@ -115,7 +115,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
 
   });
 
-  xit('should be able to top-level TRANSFER to a NON-EXISTING account', async function() {
+  it('should be able to top-level TRANSFER to a NON-EXISTING account', async function() {
     
     const [owner] = await ethers.getSigners();
     const tx = await owner.sendTransaction({
@@ -127,7 +127,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
 
   });
 
-  xit('should be able to make a top-level CALL to a non-existing contract', async function() {
+  it('should be able to make a top-level CALL to a non-existing contract', async function() {
 
     const fakeCaller = CallerFactory.attach(invalidAddress);
 
@@ -140,7 +140,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
     expect(rc.status).to.be.eq(1);
   });
 
-  xit('should be able to make a top-level CALL to a non-existing function of an existing contract', async function() {
+  it('should be able to make a top-level CALL to a non-existing function of an existing contract', async function() {
 
     // attaching the receiver contract to the caller contract factory will try to call the function testCallFoo that does not exist
     const fakeCaller = CallerFactory.attach(receiverAddress);
@@ -154,7 +154,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
     expect(rc.status).to.be.eq(1);
   });
 
-  xit('should be able to make an internal CALL to an existing contract', async function() {
+  it('should be able to make an internal CALL to an existing contract', async function() {
 
     const tx = await callerContract.testCallFoo(receiverAddress);
 
@@ -165,7 +165,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
     expect(rc.status).to.be.eq(1);
   });
 
-  xit('should be able to make an internal CALL to a non-existing contract', async function() {
+  it('should be able to make an internal CALL to a non-existing contract', async function() {
 
     const tx = await callerContract.testCallFoo(invalidAddress);
 
@@ -177,7 +177,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
 
   });
 
-  xit('should be able to make an internal VIEW CALL on a valid receiver', async function() {
+  it('should be able to make an internal VIEW CALL on a valid receiver', async function() {
 
     const result = await callerContract.testCallViewCall.staticCall(receiverAddress);
     
@@ -186,7 +186,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
     console.log("result: ", result);
   });
 
-  xit('should ALSO be able to make an internal VIEW CALL on a INVALID receiver', async function() {
+  it('should ALSO be able to make an internal VIEW CALL on a INVALID receiver', async function() {
 
     const result = await callerContract.testCallViewCall.staticCall(invalidAddress);
     
@@ -194,7 +194,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
 
   });
 
-  xit('should confirm valid contract', async function() {
+  it('should confirm valid contract', async function() {
 
     const result = await callerContract.isContract(receiverAddress);
     
@@ -202,7 +202,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
 
   });
 
-  xit('should confirm invalid contract', async function() {
+  it('should confirm invalid contract', async function() {
 
     const result = await callerContract.isContract(invalidAddress);
     
@@ -211,7 +211,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
   });
 
   // This test is not working as expected because the local besu node does not return the logs in the tx receipt
-  xit('should confirm valid contract via tx', async function() {
+  it('should confirm valid contract via tx', async function() {
 
     const tx = await callerContract.isContractTx(receiverAddress);
 
@@ -227,7 +227,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
   });
 
   // This test is not working as expected because the local besu node does not return the logs in the tx receipt
-  xit('should confirm invalid contract via tx', async function() {
+  it('should confirm invalid contract via tx', async function() {
 
     const tx = await callerContract.isContractTx(invalidAddress);
 
