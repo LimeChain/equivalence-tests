@@ -48,7 +48,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
 
   it('should be able to make a call with value to incorrect ABI via nested contract call', async function() {
     // attaching the receiver contract to the caller contract factory will try to call the function testCallFooWithWrongAbi and pass value
-    const fakeCaller = CallerFactory.attach(receiverAddress);
+    const fakeCaller = CallerFactory.attach(callerAddress);
 
     const tx = await fakeCaller.testCallFooWithWrongAbi(receiverAddress, {value: ethers.parseEther("1")});
     
@@ -61,7 +61,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
 
   it('should be able to make a call to incorrect ABI via nested contract call', async function() {
     // attaching the receiver contract to the caller contract factory will try to call the function testCallFooWithWrongAbi
-    const fakeCaller = CallerFactory.attach(receiverAddress);
+    const fakeCaller = CallerFactory.attach(callerAddress);
 
     const tx = await fakeCaller.testCallFooWithWrongAbi(receiverAddress);
     
