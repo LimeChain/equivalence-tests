@@ -24,7 +24,8 @@ describe('EVM Calls and internal calls edge cases test', function() {
 
   const invalidAddress = '0xd9145CCE52D386f254917e481eB44e9943F39138';
   const zeroAddress = '0x0000000000000000000000000000000000000000';
-  const nonExistentAddress = "0x0004324324324234234234234234234234234234";
+  const nonExistentAddressForAutoCreation = "0x0004324324324234234234234234234234234234";
+  const nonExistentAddress = "0x0004324324324234234234234234234234234235";
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
   before(async () => {
@@ -32,8 +33,8 @@ describe('EVM Calls and internal calls edge cases test', function() {
     CallerFactory = await ethers.getContractFactory("contracts/LowLevelCall.sol:Caller");
     LowLevelReceiverFactory = await ethers.getContractFactory("contracts/LowLevelCall.sol:LowLevelReceiver");
 
-    callerContract = await CallerFactory.deploy();
-    receiverContract = await LowLevelReceiverFactory.deploy();
+    callerContract = await CallerFactory.deploy({gasLimit: 5_000_000});
+    receiverContract = await LowLevelReceiverFactory.deploy({gasLimit: 5_000_000});
     
     callerAddress = callerContract.target;
     receiverAddress = receiverContract.target;
@@ -43,6 +44,63 @@ describe('EVM Calls and internal calls edge cases test', function() {
 
     // We need to wait for the contracts to be mined or some tests will fail
     await sleep(3000);
+  });
+
+  it('should be able to make a call with value to incorrect ABI via nested contract call', async function() {
+    // attaching the receiver contract to the caller contract factory will try to call the function testCallFooWithWrongAbi and pass value
+    const fakeCaller = CallerFactory.attach(callerAddress);
+
+    const tx = await fakeCaller.testCallFooWithWrongAbi(receiverAddress, {value: ethers.parseEther("1")});
+    
+    console.log("tx hash: ", tx.hash);
+
+    const rc = await tx.wait();
+
+    expect(rc.status).to.be.eq(1);
+  });
+
+  it('should be able to make a call to incorrect ABI via nested contract call', async function() {
+    // attaching the receiver contract to the caller contract factory will try to call the function testCallFooWithWrongAbi
+    const fakeCaller = CallerFactory.attach(callerAddress);
+
+    const tx = await fakeCaller.testCallFooWithWrongAbi(receiverAddress);
+    
+    console.log("tx hash: ", tx.hash);
+
+    const rc = await tx.wait();
+
+    expect(rc.status).to.be.eq(1);
+  });
+
+  it('should be able to make a contract TRANSFER to a non-existing contract', async function() {
+    const tx = await callerContract.testTransfer(nonExistentAddress, {gasLimit: 1000000});
+
+    console.log("tx hash: ", tx.hash);
+    
+    const rc = await tx.wait();
+
+    expect(rc.status).to.be.eq(1);
+  });
+
+  it('should be able to make a contract SEND to a non-existing contract', async function() {
+    const tx = await callerContract.testSend(nonExistentAddress, {value: 1000000});
+
+    console.log("tx hash: ", tx.hash);
+    
+    const rc = await tx.wait();
+
+    expect(rc.status).to.be.eq(1);
+  });
+
+  it('should be able to make a contract CALL WITH VALUE to a non-existing contract', async function() {
+
+    const tx = await callerContract.testCallDoesNotExist(nonExistentAddress);
+
+    console.log("tx hash: ", tx.hash);
+    
+    const rc = await tx.wait();
+
+    expect(rc.status).to.be.eq(1);
   });
 
   it('should be able to top-level TRANSFER to an EXISTING account', async function() {
@@ -61,7 +119,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
     
     const [owner] = await ethers.getSigners();
     const tx = await owner.sendTransaction({
-      to: nonExistentAddress,
+      to: nonExistentAddressForAutoCreation,
       value: ethers.parseEther("10")
     });
 
@@ -153,7 +211,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
   });
 
   // This test is not working as expected because the local besu node does not return the logs in the tx receipt
-  xit('should confirm valid contract via tx', async function() {
+  it('should confirm valid contract via tx', async function() {
 
     const tx = await callerContract.isContractTx(receiverAddress);
 
@@ -169,7 +227,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
   });
 
   // This test is not working as expected because the local besu node does not return the logs in the tx receipt
-  xit('should confirm invalid contract via tx', async function() {
+  it('should confirm invalid contract via tx', async function() {
 
     const tx = await callerContract.isContractTx(invalidAddress);
 
