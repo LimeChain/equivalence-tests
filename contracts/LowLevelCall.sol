@@ -27,49 +27,35 @@ contract LowLevelReceiver {
 }
 
 contract Caller {
+
     // 0x13848c3e38f8886f3f5d2ad9dff80d8092c2bbb8efd5b887a99c2c6cfc09ac2a
     event Response(bool indexed success, bytes data);
-    event ResponseUint(bool indexed success, uint indexed result);
-
-    function testCallFooWithWrongAbi(address payable _addr) public payable {
-        // You can send ether and specify a custom gas amount
-
-            //Add fake 3rd parameter
-            (bool success, bytes memory data) = _addr.call{value: msg.value, gas: 20_000}(
-                abi.encodeWithSignature('foo(string,uint256,uint256)', 'call foo', 123, 0)
-            );
-
-            emit Response(success, data);
-        
-    }
 
     // 87ba6179
     function testCallFoo(address payable _addr) public payable {
-        // You can send ether and specify a custom gas amount
 
-        
-            (bool success, bytes memory data) = _addr.call{value: msg.value, gas: 20_000}(
-                abi.encodeWithSignature('foo(string,uint256)', 'call foo', 123)
-            );
-            // uint256 result = abi.decode(data, (uint256));
-            // emit ResponseUint(true, result);
-            emit Response(success, data);
-        
+        (bool success, bytes memory data) = _addr.call{value: msg.value, gas: 20_000}(
+            abi.encodeWithSignature('foo(string,uint256)', 'call foo', 123)
+        );
+
+        emit Response(success, data);
     }
 
     function testCallViewCall(address payable _addr) public returns (bool success, bytes memory data) {
-        // You can send ether and specify a custom gas amount
-        
-            (success, data) = _addr.call{gas: 20_000}(
-                abi.encodeWithSignature('viewCall(string,uint256)', 'call foo', 123)
-            );
 
+        (success, data) = _addr.call{gas: 20_000}(
+            abi.encodeWithSignature('viewCall(string,uint256)', 'call foo', 123)
+        );
+
+        emit Response(success, data);
     }
 
     // Calling a function that does not exist triggers the fallback function.
     function testCallDoesNotExist(address payable _addr) public payable {
         
-        (bool success, bytes memory data) = _addr.call{value: msg.value}(abi.encodeWithSignature('doesNotExist()'));
+        (bool success, bytes memory data) = _addr.call{value: msg.value}(
+            abi.encodeWithSignature('doesNotExist()')
+        );
 
         emit Response(success, data);
     }
@@ -102,4 +88,13 @@ contract Caller {
         emit Response(doesExist, data);
     }
 
+    function testCallFooWithWrongAbi(address payable _addr) public payable {
+        
+        //Add fake 3rd parameter
+        (bool success, bytes memory data) = _addr.call{value: msg.value, gas: 20_000}(
+            abi.encodeWithSignature('foo(string,uint256,uint256)', 'call foo', 123, 0)
+        );
+
+        emit Response(success, data);
+    }
 }

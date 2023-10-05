@@ -46,63 +46,6 @@ describe('EVM Calls and internal calls edge cases test', function() {
     await sleep(3000);
   });
 
-  it('should be able to make a call with value to incorrect ABI via nested contract call', async function() {
-    // attaching the receiver contract to the caller contract factory will try to call the function testCallFooWithWrongAbi and pass value
-    const fakeCaller = CallerFactory.attach(callerAddress);
-
-    const tx = await fakeCaller.testCallFooWithWrongAbi(receiverAddress, {value: ethers.parseEther("1")});
-    
-    console.log("tx hash: ", tx.hash);
-
-    const rc = await tx.wait();
-
-    expect(rc.status).to.be.eq(1);
-  });
-
-  it('should be able to make a call to incorrect ABI via nested contract call', async function() {
-    // attaching the receiver contract to the caller contract factory will try to call the function testCallFooWithWrongAbi
-    const fakeCaller = CallerFactory.attach(callerAddress);
-
-    const tx = await fakeCaller.testCallFooWithWrongAbi(receiverAddress);
-    
-    console.log("tx hash: ", tx.hash);
-
-    const rc = await tx.wait();
-
-    expect(rc.status).to.be.eq(1);
-  });
-
-  it('should be able to make a contract TRANSFER to a non-existing contract', async function() {
-    const tx = await callerContract.testTransfer(nonExistentAddress, {gasLimit: 1000000});
-
-    console.log("tx hash: ", tx.hash);
-    
-    const rc = await tx.wait();
-
-    expect(rc.status).to.be.eq(1);
-  });
-
-  it('should be able to make a contract SEND to a non-existing contract', async function() {
-    const tx = await callerContract.testSend(nonExistentAddress, {value: 1000000});
-
-    console.log("tx hash: ", tx.hash);
-    
-    const rc = await tx.wait();
-
-    expect(rc.status).to.be.eq(1);
-  });
-
-  it('should be able to make a contract CALL WITH VALUE to a non-existing contract', async function() {
-
-    const tx = await callerContract.testCallDoesNotExist(nonExistentAddress);
-
-    console.log("tx hash: ", tx.hash);
-    
-    const rc = await tx.wait();
-
-    expect(rc.status).to.be.eq(1);
-  });
-
   it('should be able to top-level TRANSFER to an EXISTING account', async function() {
     
     const [owner, operator] = await ethers.getSigners();
@@ -127,6 +70,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
 
   });
 
+  // EOA -calls-> Non-existing contract
   it('should be able to make a top-level CALL to a non-existing contract', async function() {
 
     const fakeCaller = CallerFactory.attach(invalidAddress);
@@ -140,6 +84,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
     expect(rc.status).to.be.eq(1);
   });
 
+  // EOA -calls-> Non-existing function of an existing contract, resulting in the fallback function of the contract being called
   it('should be able to make a top-level CALL to a non-existing function of an existing contract', async function() {
 
     // attaching the receiver contract to the caller contract factory will try to call the function testCallFoo that does not exist
@@ -156,7 +101,9 @@ describe('EVM Calls and internal calls edge cases test', function() {
 
   it('should be able to make an internal CALL to an existing contract', async function() {
 
-    const tx = await callerContract.testCallFoo(receiverAddress);
+    const tx = await callerContract.testCallFoo(receiverAddress, {
+      value: ethers.parseEther("10")
+    });
 
     console.log("tx hash: ", tx.hash);
     
@@ -240,4 +187,60 @@ describe('EVM Calls and internal calls edge cases test', function() {
 
   });
 
+  it('should be able to make a call with value to incorrect ABI via nested contract call', async function() {
+    // attaching the receiver contract to the caller contract factory will try to call the function testCallFooWithWrongAbi and pass value
+    const fakeCaller = CallerFactory.attach(callerAddress);
+
+    const tx = await fakeCaller.testCallFooWithWrongAbi(receiverAddress, {value: ethers.parseEther("1")});
+    
+    console.log("tx hash: ", tx.hash);
+
+    const rc = await tx.wait();
+
+    expect(rc.status).to.be.eq(1);
+  });
+
+  it('should be able to make a call to incorrect ABI via nested contract call', async function() {
+    // attaching the receiver contract to the caller contract factory will try to call the function testCallFooWithWrongAbi
+    const fakeCaller = CallerFactory.attach(callerAddress);
+
+    const tx = await fakeCaller.testCallFooWithWrongAbi(receiverAddress);
+    
+    console.log("tx hash: ", tx.hash);
+
+    const rc = await tx.wait();
+
+    expect(rc.status).to.be.eq(1);
+  });
+
+  it('should be able to make a contract TRANSFER to a non-existing contract', async function() {
+    const tx = await callerContract.testTransfer(nonExistentAddress, {gasLimit: 1000000});
+
+    console.log("tx hash: ", tx.hash);
+    
+    const rc = await tx.wait();
+
+    expect(rc.status).to.be.eq(1);
+  });
+
+  it('should be able to make a contract SEND to a non-existing contract', async function() {
+    const tx = await callerContract.testSend(nonExistentAddress, {value: 1000000});
+
+    console.log("tx hash: ", tx.hash);
+    
+    const rc = await tx.wait();
+
+    expect(rc.status).to.be.eq(1);
+  });
+
+  it('should be able to make a contract CALL WITH VALUE to a non-existing contract', async function() {
+
+    const tx = await callerContract.testCallDoesNotExist(nonExistentAddress);
+
+    console.log("tx hash: ", tx.hash);
+    
+    const rc = await tx.wait();
+
+    expect(rc.status).to.be.eq(1);
+  });
 });
