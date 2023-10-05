@@ -15,7 +15,9 @@ const config: HardhatUserConfig = {
       chainId: 298,
       accounts: [
         // private keys
+        // private key for 0x67D8d32E9Bf1a9968a5ff53B87d777Aa8EBBEe69
         "0x105d050185ccb907fba04dd92d8de9e32c18305e097ab41dadda21489a211524",
+        // private key for 0x05FbA803Be258049A27B820088bab1cAD2058871
         "0x2e1d968b041d84dd120a5860cee60cd83f9374ef527ca86996317ada3d0d03e7",
       ],
     },
