@@ -34,7 +34,7 @@ contract Caller {
     // 87ba6179
     function testCallFoo(address payable _addr) public payable {
 
-        (bool success, bytes memory data) = _addr.call{value: msg.value, gas: 20_000}(
+        (bool success, bytes memory data) = _addr.call{value: msg.value, gas: 600_000}(
             abi.encodeWithSignature('foo(string,uint256)', 'call foo', 123)
         );
 
