@@ -87,14 +87,4 @@ contract Caller {
         bytes memory data = "";
         emit Response(doesExist, data);
     }
-
-    function testCallFooWithWrongAbi(address payable _addr) public payable {
-        
-        //Add fake 3rd parameter
-        (bool success, bytes memory data) = _addr.call{value: msg.value, gas: 20_000}(
-            abi.encodeWithSignature('foo(string,uint256,uint256)', 'call foo', 123, 0)
-        );
-
-        emit Response(success, data);
-    }
 }

@@ -31,6 +31,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
     await sleep(3000);
   });
 
+  // 1. EOA -transfer→ EOA2, where EOA2 exists.
   it('should be able to top-level TRANSFER to an EXISTING account', async function() {
     
     const [owner, operator] = await ethers.getSigners();
@@ -43,6 +44,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
 
   });
 
+  // 2. EOA -transfer→ EOA2, where EOA2 doesn’t exist.
   it('should be able to top-level TRANSFER to a NON-EXISTING account', async function() {
     
     const [owner] = await ethers.getSigners();
@@ -57,7 +59,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
 
   });
 
-  // EOA -calls-> Non-existing contract
+  // 3. EOA -call function f→ Contract, where Contract doesn’t exist on the address that’s called.
   it('should be able to make a top-level CALL to a non-existing contract', async function() {
 
     const randAddress = getRandomEthereumAddress();
@@ -73,7 +75,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
     expect(rc.status).to.be.eq(1);
   });
 
-  // EOA -calls-> Non-existing function of an existing contract, resulting in the fallback function of the contract being called
+  // 4. EOA -call function f→ Contract, where Contract does exist on the address that’s called, but f doesn’t exist as a function in the contract.
   it('should be able to make a top-level CALL to a non-existing function of an existing contract', async function() {
 
     // attaching the receiver contract to the caller contract factory will try to call the function testCallFoo that does not exist
@@ -88,7 +90,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
     expect(rc.status).to.be.eq(1);
   });
 
-  // EAO -calls-> Caller -calls-> Receiver
+  // 5. EOA -call→ Caller -call function f of→ Receiver, where Receiver exists and f exists.
   it('should be able to make an internal CALL to an existing contract', async function() {
 
     const tx = await callerContract.testCallFoo(receiverAddress, {
@@ -102,7 +104,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
     expect(rc.status).to.be.eq(1);
   });
 
-  // EAO -calls-> Caller -calls-> Non-existing contract
+  // 6. EOA -call→ Caller -call→ Receiver, where Receiver doesn’t exist.
   it('should be able to make an internal CALL to a non-existing contract', async function() {
 
     const randAddress = getRandomEthereumAddress();
@@ -119,7 +121,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
 
   });
 
-  // EAO -call w value-> Caller -call w value-> Non-existing contract
+  // 7. & 8. EOA -call→ Caller -call w value→ Receiver, where Receiver doesn’t exist; change the gas limit forwarded to the receiver in the contract to test with 20k/600k.
   it('should be able to make an internal CALL WITH VALUE to a non-existing contract', async function() {
 
     const randAddress = getRandomEthereumAddress();
@@ -138,11 +140,10 @@ describe('EVM Calls and internal calls edge cases test', function() {
 
   });
 
-  it('should be able to make a call with value to incorrect ABI via nested contract call', async function() {
-    // attaching the receiver contract to the caller contract factory will try to call the function testCallFooWithWrongAbi and pass value
-    const fakeCaller = CallerFactory.attach(callerAddress);
+  // 9. EOA -call→ Caller -call function f→ Receiver, where Receiver does exist, but f doesn’t exist as a function in the contract.
+  it('should be able to make an internal CALL to a non-existing function of an existing contract', async function() {
 
-    const tx = await fakeCaller.testCallFooWithWrongAbi(receiverAddress, {value: ethers.parseEther("1")});
+    const tx = await callerContract.testCallDoesNotExist(receiverAddress);
     
     console.log("tx hash: ", tx.hash);
 
@@ -151,11 +152,10 @@ describe('EVM Calls and internal calls edge cases test', function() {
     expect(rc.status).to.be.eq(1);
   });
 
-  it('should be able to make a call to incorrect ABI via nested contract call', async function() {
-    // attaching the receiver contract to the caller contract factory will try to call the function testCallFooWithWrongAbi
-    const fakeCaller = CallerFactory.attach(callerAddress);
+  // 10. EOA -call w value→ Caller -call w value function f→ Receiver, where Receiver does exist, but f doesn’t exist as a function in the contract.
+  it('should be able to make an internal CALL WITH VALUE to a non-existing function of an existing contract', async function() {
 
-    const tx = await fakeCaller.testCallFooWithWrongAbi(receiverAddress);
+    const tx = await callerContract.testCallDoesNotExist(receiverAddress, {value: ethers.parseEther("10")});
     
     console.log("tx hash: ", tx.hash);
 
@@ -182,19 +182,6 @@ describe('EVM Calls and internal calls edge cases test', function() {
     const randAddress = getRandomEthereumAddress();
 
     const tx = await callerContract.testSend(randAddress, {value: 1000000});
-
-    console.log("tx hash: ", tx.hash);
-    
-    const rc = await tx.wait();
-
-    expect(rc.status).to.be.eq(1);
-  });
-
-  it('should be able to make a contract CALL WITH VALUE to a non-existing contract', async function() {
-
-    const randAddress = getRandomEthereumAddress();
-
-    const tx = await callerContract.testCallDoesNotExist(randAddress, {value: ethers.parseEther("10")});
 
     console.log("tx hash: ", tx.hash);
     
