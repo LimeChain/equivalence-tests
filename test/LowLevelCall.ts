@@ -56,7 +56,6 @@ describe('EVM Calls and internal calls edge cases test', function() {
     });
 
     console.log("tx hash: ", tx.hash);
-
   });
 
   // 3. EOA -call function f→ Contract, where Contract doesn’t exist on the address that’s called.
@@ -164,7 +163,8 @@ describe('EVM Calls and internal calls edge cases test', function() {
     expect(rc.status).to.be.eq(1);
   });
 
-  it('should be able to make a contract TRANSFER to a non-existing contract', async function() {
+  // EOA -call→ Caller -transfer→ NonExistingContract
+  it('should be able to make an internal TRANSFER to a non-existing contract', async function() {
 
     const randAddress = getRandomEthereumAddress();
 
@@ -177,7 +177,8 @@ describe('EVM Calls and internal calls edge cases test', function() {
     expect(rc.status).to.be.eq(1);
   });
 
-  it('should be able to make a contract SEND to a non-existing contract', async function() {
+  // EOA -call→ Caller -send→ NonExistingContract
+  it('should be able to make an internal SEND to a non-existing contract', async function() {
 
     const randAddress = getRandomEthereumAddress();
 
@@ -209,7 +210,9 @@ describe('EVM Calls and internal calls edge cases test', function() {
   // This test is not working as expected because the local besu node does not return the logs in the tx receipt
   it('should confirm invalid contract via tx', async function() {
 
-    const tx = await callerContract.isContractTx(invalidAddress);
+    const randAddress = getRandomEthereumAddress();
+
+    const tx = await callerContract.isContractTx(randAddress);
 
     const rc = await tx.wait();
 
