@@ -1,17 +1,5 @@
-import { expect } from "chai";
-import { Contract } from 'ethers';
+import {expect} from "chai";
 import {ethers} from 'hardhat';
-
-// type SuccessPromiseSettledResults = PromiseSettledResult<Contract>[]
-type SuccessContractPromiseSettledResults = {
-  status: string,
-  value: Contract
-}[];
-
-const SettledStatus = {
-  fulfilled: "fulfilled",
-  rejected: "rejected"
-};
 
 describe('EVM Calls and internal calls edge cases test', function() {
 
@@ -22,10 +10,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
   let receiverAddress: string;
   let callerAddress: string;
 
-  const invalidAddress = '0xd9145CCE52D386f254917e481eB44e9943F39138';
   const zeroAddress = '0x0000000000000000000000000000000000000000';
-  const nonExistentAddressForAutoCreation = "0x0004324324324234234234234234234234234234";
-  const nonExistentAddress = "0x0004324324324234234234234234234234234235";
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
   before(async () => {
@@ -46,6 +31,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
     await sleep(3000);
   });
 
+  // 1. EOA -transfer→ EOA2, where EOA2 exists.
   it('should be able to top-level TRANSFER to an EXISTING account', async function() {
     
     const [owner, operator] = await ethers.getSigners();
@@ -58,22 +44,26 @@ describe('EVM Calls and internal calls edge cases test', function() {
 
   });
 
+  // 2. EOA -transfer→ EOA2, where EOA2 doesn’t exist.
   it('should be able to top-level TRANSFER to a NON-EXISTING account', async function() {
     
     const [owner] = await ethers.getSigners();
+    const randAddress = getRandomEthereumAddress();
+
     const tx = await owner.sendTransaction({
-      to: nonExistentAddressForAutoCreation,
+      to: randAddress,
       value: ethers.parseEther("10")
     });
 
     console.log("tx hash: ", tx.hash);
-
   });
 
-  // EOA -calls-> Non-existing contract
+  // 3. EOA -call function f→ Contract, where Contract doesn’t exist on the address that’s called.
   it('should be able to make a top-level CALL to a non-existing contract', async function() {
 
-    const fakeCaller = CallerFactory.attach(invalidAddress);
+    const randAddress = getRandomEthereumAddress();
+
+    const fakeCaller = CallerFactory.attach(randAddress);
 
     const tx = await fakeCaller.testCallFoo(receiverAddress, {gasLimit: 1000000});
     
@@ -84,7 +74,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
     expect(rc.status).to.be.eq(1);
   });
 
-  // EOA -calls-> Non-existing function of an existing contract, resulting in the fallback function of the contract being called
+  // 4. EOA -call function f→ Contract, where Contract does exist on the address that’s called, but f doesn’t exist as a function in the contract.
   it('should be able to make a top-level CALL to a non-existing function of an existing contract', async function() {
 
     // attaching the receiver contract to the caller contract factory will try to call the function testCallFoo that does not exist
@@ -99,6 +89,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
     expect(rc.status).to.be.eq(1);
   });
 
+  // 5. EOA -call→ Caller -call function f of→ Receiver, where Receiver exists and f exists.
   it('should be able to make an internal CALL to an existing contract', async function() {
 
     const tx = await callerContract.testCallFoo(receiverAddress, {
@@ -112,9 +103,14 @@ describe('EVM Calls and internal calls edge cases test', function() {
     expect(rc.status).to.be.eq(1);
   });
 
+  // 6. EOA -call→ Caller -call→ Receiver, where Receiver doesn’t exist.
   it('should be able to make an internal CALL to a non-existing contract', async function() {
 
-    const tx = await callerContract.testCallFoo(invalidAddress);
+    const randAddress = getRandomEthereumAddress();
+
+    console.log("generated randAddress: ", randAddress);
+
+    const tx = await callerContract.testCallFoo(randAddress);
 
     console.log("tx hash: ", tx.hash);
 
@@ -124,37 +120,75 @@ describe('EVM Calls and internal calls edge cases test', function() {
 
   });
 
-  it('should be able to make an internal VIEW CALL on a valid receiver', async function() {
+  // 7. & 8. EOA -call→ Caller -call w value→ Receiver, where Receiver doesn’t exist; change the gas limit forwarded to the receiver in the contract to test with 20k/600k.
+  it('should be able to make an internal CALL WITH VALUE to a non-existing contract', async function() {
 
-    const result = await callerContract.testCallViewCall.staticCall(receiverAddress);
-    
-    expect(result?.success).to.be.eq(true);
+    const randAddress = getRandomEthereumAddress();
 
-    console.log("result: ", result);
-  });
+    console.log("generated randAddress: ", randAddress);
 
-  it('should ALSO be able to make an internal VIEW CALL on a INVALID receiver', async function() {
+    const tx = await callerContract.testCallFoo(randAddress, {
+      value: ethers.parseEther("10")
+    });
 
-    const result = await callerContract.testCallViewCall.staticCall(invalidAddress);
-    
-    expect(result?.success).to.be.eq(true);
+    console.log("tx hash: ", tx.hash);
 
-  });
+    const rc = await tx.wait();
 
-  it('should confirm valid contract', async function() {
-
-    const result = await callerContract.isContract(receiverAddress);
-    
-    expect(result).to.be.eq(true);
+    expect(rc.status).to.be.eq(1);
 
   });
 
-  it('should confirm invalid contract', async function() {
+  // 9. EOA -call→ Caller -call function f→ Receiver, where Receiver does exist, but f doesn’t exist as a function in the contract.
+  it('should be able to make an internal CALL to a non-existing function of an existing contract', async function() {
 
-    const result = await callerContract.isContract(invalidAddress);
+    const tx = await callerContract.testCallDoesNotExist(receiverAddress);
     
-    expect(result).to.be.eq(false);
+    console.log("tx hash: ", tx.hash);
 
+    const rc = await tx.wait();
+
+    expect(rc.status).to.be.eq(1);
+  });
+
+  // 10. EOA -call w value→ Caller -call w value function f→ Receiver, where Receiver does exist, but f doesn’t exist as a function in the contract.
+  it('should be able to make an internal CALL WITH VALUE to a non-existing function of an existing contract', async function() {
+
+    const tx = await callerContract.testCallDoesNotExist(receiverAddress, {value: ethers.parseEther("10")});
+    
+    console.log("tx hash: ", tx.hash);
+
+    const rc = await tx.wait();
+
+    expect(rc.status).to.be.eq(1);
+  });
+
+  // EOA -call→ Caller -transfer→ NonExistingContract
+  it('should be able to make an internal TRANSFER to a non-existing contract', async function() {
+
+    const randAddress = getRandomEthereumAddress();
+
+    const tx = await callerContract.testTransfer(randAddress, {gasLimit: 1000000});
+
+    console.log("tx hash: ", tx.hash);
+    
+    const rc = await tx.wait();
+
+    expect(rc.status).to.be.eq(1);
+  });
+
+  // EOA -call→ Caller -send→ NonExistingContract
+  it('should be able to make an internal SEND to a non-existing contract', async function() {
+
+    const randAddress = getRandomEthereumAddress();
+
+    const tx = await callerContract.testSend(randAddress, {value: 1000000});
+
+    console.log("tx hash: ", tx.hash);
+    
+    const rc = await tx.wait();
+
+    expect(rc.status).to.be.eq(1);
   });
 
   // This test is not working as expected because the local besu node does not return the logs in the tx receipt
@@ -176,7 +210,9 @@ describe('EVM Calls and internal calls edge cases test', function() {
   // This test is not working as expected because the local besu node does not return the logs in the tx receipt
   it('should confirm invalid contract via tx', async function() {
 
-    const tx = await callerContract.isContractTx(invalidAddress);
+    const randAddress = getRandomEthereumAddress();
+
+    const tx = await callerContract.isContractTx(randAddress);
 
     const rc = await tx.wait();
 
@@ -187,60 +223,50 @@ describe('EVM Calls and internal calls edge cases test', function() {
 
   });
 
-  it('should be able to make a call with value to incorrect ABI via nested contract call', async function() {
-    // attaching the receiver contract to the caller contract factory will try to call the function testCallFooWithWrongAbi and pass value
-    const fakeCaller = CallerFactory.attach(callerAddress);
+  it('should be able to make an internal VIEW CALL on a valid receiver', async function() {
 
-    const tx = await fakeCaller.testCallFooWithWrongAbi(receiverAddress, {value: ethers.parseEther("1")});
+    const result = await callerContract.testCallViewCall.staticCall(receiverAddress);
     
-    console.log("tx hash: ", tx.hash);
+    expect(result?.success).to.be.eq(true);
 
-    const rc = await tx.wait();
-
-    expect(rc.status).to.be.eq(1);
+    console.log("result: ", result);
   });
 
-  it('should be able to make a call to incorrect ABI via nested contract call', async function() {
-    // attaching the receiver contract to the caller contract factory will try to call the function testCallFooWithWrongAbi
-    const fakeCaller = CallerFactory.attach(callerAddress);
+  it('should ALSO be able to make an internal VIEW CALL on a INVALID receiver', async function() {
 
-    const tx = await fakeCaller.testCallFooWithWrongAbi(receiverAddress);
+    const randAddress = getRandomEthereumAddress();
+
+    const result = await callerContract.testCallViewCall.staticCall(randAddress);
     
-    console.log("tx hash: ", tx.hash);
+    expect(result?.success).to.be.eq(true);
 
-    const rc = await tx.wait();
-
-    expect(rc.status).to.be.eq(1);
   });
 
-  it('should be able to make a contract TRANSFER to a non-existing contract', async function() {
-    const tx = await callerContract.testTransfer(nonExistentAddress, {gasLimit: 1000000});
+  it('should confirm valid contract', async function() {
 
-    console.log("tx hash: ", tx.hash);
+    const result = await callerContract.isContract(receiverAddress);
     
-    const rc = await tx.wait();
+    expect(result).to.be.eq(true);
 
-    expect(rc.status).to.be.eq(1);
   });
 
-  it('should be able to make a contract SEND to a non-existing contract', async function() {
-    const tx = await callerContract.testSend(nonExistentAddress, {value: 1000000});
+  it('should confirm invalid contract', async function() {
 
-    console.log("tx hash: ", tx.hash);
+    const randAddress = getRandomEthereumAddress();
+
+    const result = await callerContract.isContract(randAddress);
     
-    const rc = await tx.wait();
+    expect(result).to.be.eq(false);
 
-    expect(rc.status).to.be.eq(1);
   });
 
-  it('should be able to make a contract CALL WITH VALUE to a non-existing contract', async function() {
-
-    const tx = await callerContract.testCallDoesNotExist(nonExistentAddress);
-
-    console.log("tx hash: ", tx.hash);
-    
-    const rc = await tx.wait();
-
-    expect(rc.status).to.be.eq(1);
-  });
+  function getRandomEthereumAddress(): string {
+    const length: number = 40;
+    const number: string = [...Array(length)]
+      .map(() => {
+        return Math.floor(Math.random() * 16).toString(16);
+      })
+      .join("");
+    return "0x" + number;
+  }
 });
