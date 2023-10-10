@@ -163,7 +163,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
     expect(rc.status).to.be.eq(1);
   });
 
-  // EOA -call→ Caller -transfer→ NonExistingContract
+  // 11. EOA -call→ Caller -transfer→ NonExistingContract
   it('should be able to make an internal TRANSFER to a non-existing contract', async function() {
 
     const randAddress = getRandomEthereumAddress();
@@ -177,7 +177,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
     expect(rc.status).to.be.eq(1);
   });
 
-  // EOA -call→ Caller -send→ NonExistingContract
+  // 12. EOA -call→ Caller -send→ NonExistingContract
   it('should be able to make an internal SEND to a non-existing contract', async function() {
 
     const randAddress = getRandomEthereumAddress();
@@ -189,6 +189,32 @@ describe('EVM Calls and internal calls edge cases test', function() {
     const rc = await tx.wait();
 
     expect(rc.status).to.be.eq(1);
+  });
+
+  // 13. EOA -transfer→ EOA2, where EOA tries to transfer more than its balance
+  it('should not be able to top-level TRANSFER more than the available account balance', async function() {
+  
+    let wallet = ethers.Wallet.createRandom();
+    let err = "";
+
+    const [owner] = await ethers.getSigners();
+    const signer = wallet.connect(ethers.provider);
+
+    await owner.sendTransaction({
+      to: wallet.address,
+      value: ethers.parseEther("10")
+    });
+
+    await signer.sendTransaction({
+      to: owner.address,
+      value: ethers.parseEther("11")
+    }).catch((error: any) => {
+      err = error.message;
+    });
+
+    // Insufficient funds for transfer - returned by Hedera
+    // Upfront cost exceeds account balance - returned by Besu
+    expect(err).to.match(/(?:Insufficient funds for transfer|Upfront cost exceeds account balance)/);
   });
 
   // This test is not working as expected because the local besu node does not return the logs in the tx receipt
