@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 contract NonPayableContract {
 }
 
-// Revert on payment reveiced in the fallback and reveive functions
+// Revert on payment received in the fallback and receive functions
 contract RejectingPaymentsContract {
     
     event OnRevert(string message);
