@@ -1,6 +1,34 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+contract NestedContractAddressHolder {
+    address public nestedContractAddress;
+
+    function returnNestedContractAddress() public view returns (address) {
+        return nestedContractAddress;
+    }
+}
+
+contract ConditionalContractCreator {
+    address public directlyCreatedNestedContractAddress;
+
+    function createSecondNestedContract(bool shouldRevert, bool shouldHaveTryCatch) public {
+        if(shouldRevert && shouldHaveTryCatch) {
+            try new SecondNestedContract(true) {
+            } catch (bytes memory) {}
+        } else if(shouldRevert) {
+            new SecondNestedContract(true);
+        } else {
+            SecondNestedContract secondNestedContract = new SecondNestedContract(shouldRevert);
+            directlyCreatedNestedContractAddress = address(secondNestedContract);
+        }
+    }
+
+    function returnDirectlyCreatedContractAddress() public view returns (address) {
+        return directlyCreatedNestedContractAddress;
+    }
+}
+
 // A -> create -> B
 contract ContractCreator {
 
@@ -19,24 +47,15 @@ contract ContractCreator {
 //A -> create -> B + C
 //A -> create -> B + C (revert with try/catch)
 //A -> create -> B + C (revert without try/catch)
-contract DoubleContractCreator {
+contract DoubleContractCreator is ConditionalContractCreator {
 
     address public firstNestedContractAddress;
-    address public secondNestedContractAddress;
 
     constructor(bool shouldRevertOnSecond, bool shouldHaveTryCatchOnSecond) {
         FirstNestedContract firstNestedContract = new FirstNestedContract(false);
         firstNestedContractAddress = address(firstNestedContract);
 
-        if(shouldRevertOnSecond && shouldHaveTryCatchOnSecond) {
-            try new SecondNestedContract(true) {
-            } catch (bytes memory err) {}
-        } else if(shouldRevertOnSecond) {
-            new SecondNestedContract(true);
-        } else {
-             SecondNestedContract secondNestedContract = new SecondNestedContract(false);
-             secondNestedContractAddress = address(secondNestedContract);
-        }
+        createSecondNestedContract(shouldRevertOnSecond, shouldHaveTryCatchOnSecond);
     }
 
     function returnNestedContractAddress() public view returns (address) {
@@ -47,17 +66,11 @@ contract DoubleContractCreator {
 // A -> create -> B -> create -> C
 // A -> create -> B -> create -> C (reverts without try/catch)
 // A -> create -> B -> create -> C (reverts with try/catch)
-contract DoubleNestedContractCreator {
-
-    address public nestedContractAddress;
+contract DoubleNestedContractCreator is NestedContractAddressHolder {
 
     constructor(bool shouldRevert, bool shouldHaveTryCatch) {
         NestedContractCreator nestedContract = new NestedContractCreator(shouldRevert, shouldHaveTryCatch);
         nestedContractAddress = address(nestedContract);
-    }
-
-    function returnNestedContractAddress() public view returns (address) {
-        return nestedContractAddress;
     }
 }
 
@@ -68,10 +81,9 @@ contract DoubleNestedContractCreator {
 // A -> create -> B. A -> create with call -> C
 // A -> create -> B. A -> create with call -> C (reverts without try/catch)
 // A -> create -> B. A -> create with call -> C (reverts with try/catch)
-contract DoubleNestedCallingContractCreator {
+contract DoubleNestedCallingContractCreator is ConditionalContractCreator {
 
     address public nestedCallingContractAddress;
-    address public directlyCreatedNestedContractAddress;
 
     constructor() {
         FirstNestedContract nestedContract = new FirstNestedContract(false);
@@ -83,28 +95,15 @@ contract DoubleNestedCallingContractCreator {
     }
 
     function createContractDirectly(bool shouldRevert, bool shouldHaveTryCatch) public {
-        if(shouldRevert && shouldHaveTryCatch) {
-            try new SecondNestedContract(true) {
-            } catch (bytes memory) {}
-        } else if(shouldRevert) {
-            new SecondNestedContract(true);
-        } else {
-            SecondNestedContract secondNestedContract = new SecondNestedContract(shouldRevert);
-            directlyCreatedNestedContractAddress = address(secondNestedContract);
-        }
+        createSecondNestedContract(shouldRevert, shouldHaveTryCatch);
     }
 
     function returnNestedContractAddress() public view returns (address) {
         return nestedCallingContractAddress;
     }
-
-    function returnDirectlyCreatedContractAddress() public view returns (address) {
-        return directlyCreatedNestedContractAddress;
-    }
 }
 
-contract NestedContractCreator {
-    address public nestedContractAddress;
+contract NestedContractCreator is NestedContractAddressHolder {
 
     constructor(bool shouldRevert, bool shouldHaveTryCatch) {
         if(shouldRevert && shouldHaveTryCatch) {
@@ -116,10 +115,6 @@ contract NestedContractCreator {
              FirstNestedContract nestedContract = new FirstNestedContract(false);
              nestedContractAddress = address(nestedContract);
         }
-    }
-
-    function returnNestedContractAddress() public view returns (address) {
-        return nestedContractAddress;
     }
 }
 
@@ -152,8 +147,7 @@ contract CallingContractCreatorWithGasAndValue {
     }
 }
 
-contract FirstNestedContract {
-    address public nestedContractAddress;
+contract FirstNestedContract is ConditionalContractCreator {
 
     constructor(bool shouldRevert) {
         if(shouldRevert) {
@@ -161,22 +155,8 @@ contract FirstNestedContract {
         }
     }
 
-    function createContract(bool shouldRevert, bool shouldHaveTryCatch) public returns (address) {
-        if(shouldRevert && shouldHaveTryCatch) {
-            try new SecondNestedContract(true) {
-            } catch (bytes memory err) {}
-        } else if(shouldRevert) {
-            new SecondNestedContract(true);
-        } else {
-            SecondNestedContract secondNestedContract = new SecondNestedContract(shouldRevert);
-            nestedContractAddress = address(secondNestedContract);
-        }
-
-        return nestedContractAddress;
-    }
-
-    function returnNestedContractAddress() public view returns (address) {
-        return nestedContractAddress;
+    function createContract(bool shouldRevert, bool shouldHaveTryCatch) public {
+        createSecondNestedContract(shouldRevert, shouldHaveTryCatch);
     }
 }
 
@@ -189,17 +169,12 @@ contract SecondNestedContract {
     }
 }
 
-contract TransferringContractCreator {
-    address public nestedContractAddress;
+contract TransferringContractCreator is NestedContractAddressHolder {
 
     function createTransferringContract(address payable recipient) public payable {
         TransferringContract transferringContract = new TransferringContract(recipient);
         nestedContractAddress = address(transferringContract);
 
-    }
-
-    function returnNestedContractAddress() public view returns (address) {
-        return nestedContractAddress;
     }
 }
 
