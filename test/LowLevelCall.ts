@@ -237,6 +237,8 @@ describe('EVM Calls and internal calls edge cases test', function() {
     expect(err).to.match(/(?:Insufficient funds for transfer|Upfront cost exceeds account balance)/);
   });
 
+  // Non payable contract scenarios below:
+  
   // EOA -call w value→ NonPayableContract
   it('should not be able to top-level transfer to NonPayableContract', async function() {
 
@@ -308,7 +310,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
   });
 
   // EOA -call→ Caller -transfer→ NonPayableContract
-  it('should be able to make an internal TRANSFER to NonPayableContract', async function() {
+  it('should not be able to make an internal TRANSFER to NonPayableContract', async function() {
 
 
     let tx = null;
@@ -330,7 +332,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
   });
 
   // EOA -call→ Caller -transfer→ RejectingPaymentsContract
-  it('should be able to make an internal TRANSFER to RejectingPaymentsContract', async function() {
+  it('should not be able to make an internal TRANSFER to RejectingPaymentsContract', async function() {
 
 
     let tx = null;
@@ -352,7 +354,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
   });
 
   // EOA -call→ Caller -send→ NonPayableContract
-  it('should be able to make an internal SEND to NonPayableContract', async function() {
+  it('should not be able to make an internal SEND to NonPayableContract', async function() {
 
     const tx = await callerContract.testSend(nonPayableContractAddress, {value: ethers.parseEther("10")});
 
@@ -364,7 +366,7 @@ describe('EVM Calls and internal calls edge cases test', function() {
   });
 
   // EOA -call→ Caller -send→ RejectingPaymentsContract
-  it('should be able to make an internal SEND to RejectingPaymentsContract', async function() {
+  it('should not be able to make an internal SEND to RejectingPaymentsContract', async function() {
 
     const tx = await callerContract.testSend(rejectingPaymentsContractAddress, {value: ethers.parseEther("10")});
 
@@ -375,8 +377,6 @@ describe('EVM Calls and internal calls edge cases test', function() {
     expect(rc.status).to.be.eq(1);
   });
   
-  //-----
-
   // This test is not working as expected because the local besu node does not return the logs in the tx receipt
   it('should confirm valid contract via tx', async function() {
 
