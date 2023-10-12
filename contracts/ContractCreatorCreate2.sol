@@ -14,12 +14,12 @@ contract ConditionalContractCreator {
 
     function createSecondNestedContract(bool shouldRevert, bool shouldHaveTryCatch) public {
         if(shouldRevert && shouldHaveTryCatch) {
-            try new SecondNestedContract(true) {
+            try new SecondNestedContract{salt: bytes32(uint(123))}(true) {
             } catch (bytes memory) {}
         } else if(shouldRevert) {
-            new SecondNestedContract(true);
+            new SecondNestedContract{salt: bytes32(uint(123))}(true);
         } else {
-            SecondNestedContract secondNestedContract = new SecondNestedContract(shouldRevert);
+            SecondNestedContract secondNestedContract = new SecondNestedContract{salt: bytes32(uint(123))}(shouldRevert);
             directlyCreatedNestedContractAddress = address(secondNestedContract);
         }
     }
@@ -35,7 +35,7 @@ contract ContractCreator {
     address public firstNestedContractAddress;
 
     constructor() {
-        FirstNestedContract firstNestedContract = new FirstNestedContract(false);
+        FirstNestedContract firstNestedContract = new FirstNestedContract{salt: bytes32(uint(123))}(false);
         firstNestedContractAddress = address(firstNestedContract);
     }
 
@@ -52,7 +52,7 @@ contract DoubleContractCreator is ConditionalContractCreator {
     address public firstNestedContractAddress;
 
     constructor(bool shouldRevertOnSecond, bool shouldHaveTryCatchOnSecond) {
-        FirstNestedContract firstNestedContract = new FirstNestedContract(false);
+        FirstNestedContract firstNestedContract = new FirstNestedContract{salt: bytes32(uint(123))}(false);
         firstNestedContractAddress = address(firstNestedContract);
 
         createSecondNestedContract(shouldRevertOnSecond, shouldHaveTryCatchOnSecond);
@@ -69,7 +69,7 @@ contract DoubleContractCreator is ConditionalContractCreator {
 contract DoubleNestedContractCreator is NestedContractAddressHolder {
 
     constructor(bool shouldRevert, bool shouldHaveTryCatch) {
-        NestedContractCreator nestedContract = new NestedContractCreator(shouldRevert, shouldHaveTryCatch);
+        NestedContractCreator nestedContract = new NestedContractCreator{salt: bytes32(uint(123))}(shouldRevert, shouldHaveTryCatch);
         nestedContractAddress = address(nestedContract);
     }
 }
@@ -86,7 +86,7 @@ contract DoubleNestedCallingContractCreator is ConditionalContractCreator {
     address public nestedCallingContractAddress;
 
     constructor() {
-        FirstNestedContract nestedContract = new FirstNestedContract(false);
+        FirstNestedContract nestedContract = new FirstNestedContract{salt: bytes32(uint(123))}(false);
         nestedCallingContractAddress = address(nestedContract);
     }
 
@@ -112,7 +112,7 @@ contract NestedContractCreator is NestedContractAddressHolder {
         } else if(shouldRevert) {
             new FirstNestedContract(shouldRevert);
         } else {
-             FirstNestedContract nestedContract = new FirstNestedContract(false);
+             FirstNestedContract nestedContract = new FirstNestedContract{salt: bytes32(uint(123))}(false);
              nestedContractAddress = address(nestedContract);
         }
     }
@@ -172,9 +172,8 @@ contract SecondNestedContract {
 contract TransferringContractCreator is NestedContractAddressHolder {
 
     function createTransferringContract(address payable recipient) public payable {
-        TransferringContract transferringContract = new TransferringContract(recipient);
+        TransferringContract transferringContract = new TransferringContract{salt: bytes32(uint(123))}(recipient);
         nestedContractAddress = address(transferringContract);
-
     }
 }
 

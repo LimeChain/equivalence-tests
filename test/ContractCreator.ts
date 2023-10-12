@@ -60,35 +60,53 @@ describe('Contract nonces scenarios', function() {
     await sleep(4000);
   });
 
+  //Contracts with CREATE2 usage
+  // before(async () => {
+  //   ContractCreatorFactory = await ethers.getContractFactory("contracts/ContractCreatorCreate2.sol:ContractCreator");
+  //   DoubleContractCreatorFactory = await ethers.getContractFactory("contracts/ContractCreatorCreate2.sol:DoubleContractCreator");
+  //   DoubleNestedContractCreatorFactory = await ethers.getContractFactory("contracts/ContractCreatorCreate2.sol:DoubleNestedContractCreator");
+  //   DoubleNestedCallingContractCreatorFactory = await ethers.getContractFactory("contracts/ContractCreatorCreate2.sol:DoubleNestedCallingContractCreator");
+  //   CallingContractCreatorWithGasFactory = await ethers.getContractFactory("contracts/ContractCreatorCreate2.sol:CallingContractCreatorWithGas");
+  //   CallingContractCreatorWithGasAndValueFactory = await ethers.getContractFactory("contracts/ContractCreatorCreate2.sol:CallingContractCreatorWithGasAndValue");
+  //   FirstNestedContractFactory = await ethers.getContractFactory("contracts/ContractCreatorCreate2.sol:FirstNestedContract");
+  //   TransferringContractCreatorFactory = await ethers.getContractFactory("contracts/ContractCreatorCreate2.sol:TransferringContractCreator");
+  //   RecipientContractFactory = await ethers.getContractFactory("contracts/ContractCreatorCreate2.sol:RecipientContract");
+
+  //   await sleep(4000);
+  // });
+
   //Contract Create of A which deploys contract B in CONSTRUCTOR
   it('should be able to deploy a nested contract in constructor', async function() {
     contractCreator = await ContractCreatorFactory.deploy({gasLimit: 5_000_000});
     contractCreatorAddress = contractCreator.target;
 
+    await sleep(2000);
+
     contractCreatorAddress = await deployContract(ContractCreatorFactory);
-    
     console.log("Deployed ContractCreator contract on address: ", contractCreatorAddress);
   });
 
   //Contract Create of A which deploys contract B and C in CONSTRUCTOR
   it('should be able to deploy two nested contracts in constructor', async function() {
     doubleContractCreatorAddress = await deployContractWithRevertAndTryCatchParameter(DoubleContractCreatorFactory, false, false);
-    
     console.log("Deployed DoubleContractCreator contract on address: ", doubleContractCreatorAddress);
-  });
 
-  //Contract Create of A which deploys contract B which deploys contract C in CONSTRUCTOR
-  it('should be able to deploy two nested contracts in constructor', async function() {
-    doubleContractCreatorAddress = await deployContractWithRevertAndTryCatchParameter(DoubleContractCreatorFactory, false, false);
+    await sleep(2000);
 
-    console.log("Deployed DoubleNestedContractCreator contract on address: ", doubleContractCreatorAddress);
+    const firstNestedCreatedAddress = await getNestedCreatedAddress(doubleContractCreatorAddress);
+    console.log("Successfully created first nested contract address is: ", firstNestedCreatedAddress);
+
+    //SecondNestedContract is created via a call to a method
+    const secondNestedCreatedAddress = await getNestedCreatedAddressFromCall(firstNestedCreatedAddress);
+    console.log("Successfully created second nested contract address is: ", secondNestedCreatedAddress);
   });
 
   //Contract Create of A which deploys contract B and tries to deploy contract C, which reverts in a try/catch in CONSTRUCTOR
   it('should be able to deploy two nested contracts in constructor with the second deploy reverting in a try/catch block in constructor', async function() {
     doubleContractCreatorAddress = await deployContractWithRevertAndTryCatchParameter(DoubleContractCreatorFactory, true, true);
-    
     console.log("Deployed DoubleContractCreator contract with reverting second deploy using try/catch on address: ", doubleContractCreatorAddress);
+
+    await sleep(2000);
 
     const nestedCreatedAddress = await getNestedCreatedAddress(doubleContractCreatorAddress);
     console.log("Successfully created nested contract address is: ", nestedCreatedAddress);
@@ -97,7 +115,6 @@ describe('Contract nonces scenarios', function() {
   //Contract Create of A which deploys contract B and tries to deploy contract C, which reverts without a try/catch in CONSTRUCTOR
   it('should be able to deploy two nested contracts in constructor with the second deploy reverting without a try/catch block in constructor', async function() {
     doubleContractCreatorAddress = await deployContractWithRevertAndTryCatchParameter(DoubleContractCreatorFactory, true, false);
-    
     console.log("Deployed DoubleContractCreator contract with reverting second deploy without using try/catch on address: ", doubleContractCreatorAddress);
 
     const nestedCreatedAddress = await getNestedCreatedAddress(doubleContractCreatorAddress);
@@ -107,7 +124,6 @@ describe('Contract nonces scenarios', function() {
   //Contract create of A which deploys contract B which deploys contract C in CONSTRUCTOR
   it('should be able to deploy a contract in constructor which deploys another contract in constructor', async function() {
     doubleNestedContractCreatorAddress = await deployContractWithRevertAndTryCatchParameter(DoubleNestedContractCreatorFactory, false, false);
-    
     console.log("Deployed DoubleNestedContractCreator contract on address: ", doubleNestedContractCreatorAddress);
 
     await sleep(2000);
@@ -122,7 +138,6 @@ describe('Contract nonces scenarios', function() {
   //Contract create of A which deploys contract B which tries to deploy reverting contract C without try/catch in CONSTRUCTOR
   it('should be able to deploy a contract in constructor which deploys another contract in constructor', async function() {
     doubleNestedContractCreatorAddress = await deployContractWithRevertAndTryCatchParameter(DoubleNestedContractCreatorFactory, true, false);
-    
     console.log("Deployed DoubleNestedContractCreator contract with reverting second deploy without try/catch on address: ", doubleNestedContractCreatorAddress);
 
     const nestedCreatedAddress = await getNestedCreatedAddress(doubleNestedContractCreatorAddress);
@@ -132,7 +147,6 @@ describe('Contract nonces scenarios', function() {
   //Contract create of A which deploys contract B which tries to deploy reverting contract C with try/catch in CONSTRUCTOR
   it('should be able to deploy a contract in constructor which deploys another contract in constructor', async function() {
     doubleNestedContractCreatorAddress = await deployContractWithRevertAndTryCatchParameter(DoubleNestedContractCreatorFactory, true, true);
-    
     console.log("Deployed DoubleNestedContractCreator contract with reverting second deploy with try/catch on address: ", doubleNestedContractCreatorAddress);
 
     await sleep(2000);
@@ -146,22 +160,18 @@ describe('Contract nonces scenarios', function() {
 
   //Contract create of A which deploys contract B which then is called for nested contract creation
   it('should be able to deploy a nested contract in constructor and create another via call to the newly created contract', async function() {
-    doubleNestedCallingContract = await DoubleNestedCallingContractCreatorFactory.deploy({gasLimit: 10_000_000});
+    doubleNestedCallingContract = await DoubleNestedCallingContractCreatorFactory.deploy({gasLimit: 1_000_000});
     doubleNestedCallingContractCreatorAddress = doubleNestedCallingContract.target;
-
-    // doubleNestedCallingContractCreatorAddress = await deployContract(DoubleNestedCallingContractCreatorFactory);
-    
     console.log("Deployed DoubleNestedCallingContractCreator contract on address: ", doubleNestedCallingContractCreatorAddress);
 
     const tx = await doubleNestedCallingContract.createContract(false, false, {gasLimit: 1_000_000});
-    console.log("tx hash: ", tx.hash);
 
-    const rc = await tx.wait();
+    await sleep(2000);
 
     const firstNestedCreatedAddress = await getNestedCreatedAddress(doubleNestedCallingContractCreatorAddress);
     console.log("Successfully created first nested contract address is: ", firstNestedCreatedAddress);
 
-    const secondNestedCreatedAddress = await getNestedCreatedAddress(firstNestedCreatedAddress);
+    const secondNestedCreatedAddress = await getNestedCreatedAddressFromCall(firstNestedCreatedAddress);
     console.log("Successfully created second nested contract address is: ", secondNestedCreatedAddress);
   });
 
@@ -169,7 +179,6 @@ describe('Contract nonces scenarios', function() {
   it('reverts when trying to deploy a nested contract in constructor and try to create another reverting contract without try/catch via call to the newly created contract', async function() {
     doubleNestedCallingContract = await DoubleNestedCallingContractCreatorFactory.deploy({gasLimit: 6_000_000});
     doubleNestedCallingContractCreatorAddress = doubleNestedCallingContract.target;
-    
     console.log("Deployed DoubleNestedCallingContractCreator contract on address: ", doubleNestedCallingContractCreatorAddress);
 
     await sleep(2000);
@@ -179,7 +188,7 @@ describe('Contract nonces scenarios', function() {
 
     const tx = await doubleNestedCallingContract.createContract(true, false, {gasLimit: 1_000_000});
 
-    //would fail
+    //would revert
     const rc = await tx.wait();
   });
 
@@ -187,7 +196,6 @@ describe('Contract nonces scenarios', function() {
   it('should be able to deploy a nested contract in constructor and try to create another reverting contract with try/catch via call to the newly created contract', async function() {
     doubleNestedCallingContract = await DoubleNestedCallingContractCreatorFactory.deploy({gasLimit: 6_000_000});
     doubleNestedCallingContractCreatorAddress = doubleNestedCallingContract.target;
-    
     console.log("Deployed DoubleNestedCallingContractCreator contract on address: ", doubleNestedCallingContractCreatorAddress);
 
     await sleep(2000);
@@ -201,7 +209,7 @@ describe('Contract nonces scenarios', function() {
     const rc = await tx.wait();
     expect(rc.status).to.be.eq(1);
 
-    const secondNestedCreatedAddress = await getNestedCreatedAddress(firstNestedCreatedAddress);
+    const secondNestedCreatedAddress = await getNestedCreatedAddressFromCall(firstNestedCreatedAddress);
     expect(secondNestedCreatedAddress).to.be.eq("0x0000000000000000000000000000000000000000");
   });
 
@@ -209,7 +217,6 @@ describe('Contract nonces scenarios', function() {
   it('should be able to deploy a nested contract in constructor and then another nested contract via separate contract call', async function() {
     doubleNestedCallingContract = await DoubleNestedCallingContractCreatorFactory.deploy({gasLimit: 6_000_000});
     doubleNestedCallingContractCreatorAddress = doubleNestedCallingContract.target;
-
     console.log("Deployed DoubleNestedCallingContractCreator contract on address: ", doubleNestedCallingContractCreatorAddress);
 
     await sleep(2000);
@@ -229,7 +236,6 @@ describe('Contract nonces scenarios', function() {
   it('should be able to deploy a nested contract in constructor and then try to deploy another nested contract via separate contract call which reverts without try/catch', async function() {
     doubleNestedCallingContract = await DoubleNestedCallingContractCreatorFactory.deploy({gasLimit: 6_000_000});
     doubleNestedCallingContractCreatorAddress = doubleNestedCallingContract.target;
-
     console.log("Deployed DoubleNestedCallingContractCreator contract on address: ", doubleNestedCallingContractCreatorAddress);
 
     await sleep(2000);
@@ -245,10 +251,29 @@ describe('Contract nonces scenarios', function() {
     expect(createdNestedContractViaCall).to.be.eq("0x0000000000000000000000000000000000000000");
   });
 
-  //Given existing contracts A and B. We make Hapi Contract Call of A and A makes solidity call with GAS to B which deploys contract C
+  //Contract create of A which deploys contract B. Then create reverting contract C via contract call to A with try/catch
+  it('should be able to deploy a nested contract in constructor and try to create another reverting contract with try/catch via call to the newly created contract', async function() {
+    doubleNestedCallingContract = await DoubleNestedCallingContractCreatorFactory.deploy({gasLimit: 6_000_000});
+    doubleNestedCallingContractCreatorAddress = doubleNestedCallingContract.target;
+    console.log("Deployed DoubleNestedCallingContractCreator contract on address: ", doubleNestedCallingContractCreatorAddress);
+
+    await sleep(2000);
+
+    const firstNestedCreatedAddress = await getNestedCreatedAddress(doubleNestedCallingContractCreatorAddress);
+    console.log("Successfully created first nested contract address is: ", firstNestedCreatedAddress);
+
+    const tx = await doubleNestedCallingContract.createContractDirectly(true, true, {gasLimit: 1_000_000});
+
+    const rc = await tx.wait();
+    expect(rc.status).to.be.eq(1);
+
+    const secondNestedCreatedAddress = await getNestedCreatedAddressFromCall(firstNestedCreatedAddress);
+    expect(secondNestedCreatedAddress).to.be.eq("0x0000000000000000000000000000000000000000");
+  });
+
+  //Given existing contracts A and B. We make contract call to A and A makes solidity call with GAS to B which deploys contract C
   it('should be able to call nested contract function with sufficient GAS and deploys a contract', async function() {
     firstNestedContractAddress = await deployContractWithRevertParameter(FirstNestedContractFactory, false);
-    
     console.log("Deployed FirstNestedContract contract on address: ", firstNestedContractAddress);
 
     await sleep(1000);
@@ -262,7 +287,7 @@ describe('Contract nonces scenarios', function() {
 
     const tx = await callingContractCreatorWithGas.createContractWithCallWithGas(firstNestedContractAddress, 1_000_000);
 
-    await sleep(1000);
+    await sleep(2000);
 
     let createdNestedContractViaCall = await getNestedCreatedAddressFromCall(firstNestedContractAddress);
 
@@ -270,10 +295,9 @@ describe('Contract nonces scenarios', function() {
     console.log("Successfully created nested contract address is: ", createdNestedContractViaCall);
   });
 
-  //Given existing contracts A and B. We make Hapi Contract Call of A and A makes solidity call with GAS to B which tries to deploy contract C but reverts due to INSUFFICIENT GAS.
+  //Given existing contracts A and B. We make contract call of A and A makes solidity call with GAS to B which tries to deploy contract C but reverts due to INSUFFICIENT GAS.
   it('reverts on insufficent gas when calling nested contract function with small GAS and it tries to deploy a contract', async function() {
     firstNestedContractAddress = await deployContractWithRevertParameter(FirstNestedContractFactory, false);
-    
     console.log("Deployed FirstNestedContract contract on address: ", firstNestedContractAddress);
 
     await sleep(2000);
@@ -285,35 +309,30 @@ describe('Contract nonces scenarios', function() {
 
     await sleep(2000);
 
-    //would fail
+    //would revert
     const tx = await callingContractCreatorWithGas.createContractWithCallWithGas(firstNestedContractAddress, 1);
   });
 
-  //Given existing contracts A and B. We make Hapi Contract Call of A and A makes solidity call with GAS to B which tries to deploy contract C which transfers passed value but does not have enough balance
+  //Given existing contracts A and B. We make contract call to A and A makes solidity call with GAS to B which tries to deploy contract C which transfers passed value but does not have enough balance
   it('reverts on insufficent value when calling nested contract function with sufficient GAS and it tries to deploy a contract which makes a transfer in its constructor', async function() {
     recipientContractAddress = await deployContract(RecipientContractFactory);
-
-    await sleep(2000);
-
     console.log("Deployed RecipientContract contract on address: ", recipientContractAddress);
 
     transferringContractCreatorAddress = await deployContract(TransferringContractCreatorFactory);
-
-    await sleep(2000);
-
     console.log("Deployed TransferringContractCreator contract on address: ", transferringContractCreatorAddress);
 
     callingContractCreatorWithGasAndValue = await CallingContractCreatorWithGasAndValueFactory.deploy({gasLimit: 1_000_000});
     callingContractCreatorWithGasAndValueAddress = callingContractCreatorWithGasAndValue.target;
-
     callingContractCreatorWithGasAndValueAddress = await deployContract(CallingContractCreatorWithGasAndValueFactory);
-
     console.log("Deployed CallingContractCreatorWithGasAndValue contract on address: ", callingContractCreatorWithGasAndValueAddress);
 
     await sleep(2000);
 
-    const tx = await callingContractCreatorWithGasAndValue.createContractWithCallWithGasAndValue(transferringContractCreatorAddress, recipientContractAddress, 1_000_000, {value: 1_000});
+    //would revert
+    const tx = await callingContractCreatorWithGasAndValue.createContractWithCallWithGasAndValue(transferringContractCreatorAddress, recipientContractAddress, 1_000_000, {value: 1_000_000_000_000});
 
+    await sleep(2000);
+    
     const nestedCreatedAddress = await getNestedCreatedAddress(transferringContractCreatorAddress);
     expect(nestedCreatedAddress).to.be.eq("0x0000000000000000000000000000000000000000");
   });
