@@ -16,5 +16,16 @@ contract Caller {
     function canBeCalled() public pure returns (string memory) {
         return "I can be called!";
     }
-    
+
+    // Calling a function that transfers sent value to a recipient via SEND
+    function testSend(address payable _addr) public payable {
+        bool success = _addr.send(msg.value);
+
+        emit Response(success, "");
+    }
+
+    // Calling a function that transfers sent value to a recipient via TRANSFER
+    function testTransfer(address payable _addr) public payable {
+        _addr.transfer(msg.value);
+    }
 }

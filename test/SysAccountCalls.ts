@@ -197,4 +197,167 @@ describe('EVM Calls and internal calls to Hedera system accounts', function() {
   
   // Internal calls to system accounts ----------------------------------------
 
+  // 10. EOA -call→ SysAccountsCaller -call→ 0.0.0
+  it('should not be able to make an internal CALL to account 0.0.0', async function() {
+
+    const tx = await callerContract.makeCallTo(addressZero, {gasLimit: 1000000});
+
+    console.log("tx hash: ", tx.hash);
+    
+    const rc = await tx.wait();
+
+    // top level tx successful, internal transaction not successful
+    expect(rc.status).to.be.eq(1);
+  });
+
+  // 11. EOA -call→ SysAccountsCaller -call→ 0.0.2
+  it('should not be able to make an internal CALL to account 0.0.2', async function() {
+
+    const tx = await callerContract.makeCallTo(addressTwo, {gasLimit: 1000000});
+
+    console.log("tx hash: ", tx.hash);
+    
+    const rc = await tx.wait();
+
+    // top level tx successful, internal transaction not successful
+    expect(rc.status).to.be.eq(1);
+  });
+
+   // 12. EOA -call→ SysAccountsCaller -call→ 0.0.800
+  it('should not be able to make an internal CALL to account 0.0.800', async function() {
+
+    const tx = await callerContract.makeCallTo(address800, {gasLimit: 1000000});
+
+    console.log("tx hash: ", tx.hash);
+    
+    const rc = await tx.wait();
+
+    // top level tx successful, internal transaction not successful
+    expect(rc.status).to.be.eq(1);
+  });
+
+  // 13. EOA -call w value→ SysAccountsCaller -call w value→ 0.0.0
+  it('should not be able to make an internal CALL WITH VALUE to account 0.0.0', async function() {
+
+    const tx = await callerContract.makeCallTo(addressZero, {gasLimit: 1000000, value: ethers.parseEther("10")});
+
+    console.log("tx hash: ", tx.hash);
+    
+    const rc = await tx.wait();
+
+    // top level tx successful, internal transaction not successful
+    expect(rc.status).to.be.eq(1);
+  });
+
+  // 14. EOA -call w value→ SysAccountsCaller -call w value→ 0.0.2
+  it('should not be able to make an internal CALL WITH VALUE to account 0.0.2', async function() {
+
+    const tx = await callerContract.makeCallTo(addressTwo, {gasLimit: 1000000, value: ethers.parseEther("10")});
+
+    console.log("tx hash: ", tx.hash);
+    
+    const rc = await tx.wait();
+
+    // top level tx successful, internal transaction not successful
+    expect(rc.status).to.be.eq(1);
+  });
+
+  // 15. EOA -call w value→ SysAccountsCaller -call w value→ 0.0.800
+  it('should be able to make an internal CALL WITH VALUE to account 0.0.800', async function() {
+
+    const tx = await callerContract.makeCallTo(address800, {gasLimit: 1000000, value: ethers.parseEther("10")});
+
+    console.log("tx hash: ", tx.hash);
+    
+    const rc = await tx.wait();
+
+    // top level tx successful, internal transaction not successful
+    expect(rc.status).to.be.eq(1);
+  });
+
+  // 16. EOA -call w value→ SysAccountsCaller -transfer→ 0.0.0
+  it('should not be able to make an internal TRANSFER to account 0.0.0', async function() {
+    let err = "";
+
+    try {
+      const tx = await callerContract.testTransfer(addressZero, {gasLimit: 1000000, value: ethers.parseEther("10")});
+
+      console.log("tx hash: ", tx.hash);
+      await tx.wait();
+
+    } catch (error: any) {
+      err = error.message;
+    }
+
+    expect(err).to.match(/(?:transaction execution reverted|transaction reverted|execution reverted:)/);
+  });
+
+  // 17. EOA -call w value→ SysAccountsCaller -transfer→ 0.0.2
+  it('should not be able to make an internal TRANSFER to account 0.0.2', async function() {
+    let err = "";
+
+    try {
+      const tx = await callerContract.testTransfer(addressTwo, {gasLimit: 1000000, value: ethers.parseEther("10")});
+
+      console.log("tx hash: ", tx.hash);
+      await tx.wait();
+      
+    } catch (error: any) {
+      err = error.message;
+    }
+
+    expect(err).to.match(/(?:transaction execution reverted|transaction reverted|execution reverted:)/);
+  });
+
+  // 18. EOA -call w value→ SysAccountsCaller -transfer→ 0.0.800
+  it('should be able to make an internal TRANSFER to account 0.0.800', async function() {
+
+    const tx = await callerContract.testTransfer(address800, {gasLimit: 1000000, value: ethers.parseEther("10")});
+
+    console.log("tx hash: ", tx.hash);
+    
+    const rc = await tx.wait();
+
+    // top level tx successful, internal transaction not successful
+    expect(rc.status).to.be.eq(1);
+  });
+
+  // 19. EOA -call w value→ SysAccountsCaller -send→ 0.0.0
+  it('should not be able to make an internal SEND to account 0.0.0', async function() {
+
+    const tx = await callerContract.testSend(addressZero, {gasLimit: 1000000, value: ethers.parseEther("10")});
+
+    console.log("tx hash: ", tx.hash);
+    
+    const rc = await tx.wait();
+
+    // top level tx successful, internal transaction not successful
+    expect(rc.status).to.be.eq(1);
+  });
+
+  // 20. EOA -call w value→ SysAccountsCaller -send→ 0.0.2
+  it('should not be able to make an internal SEND to account 0.0.2', async function() {
+
+    const tx = await callerContract.testSend(addressTwo, {gasLimit: 1000000, value: ethers.parseEther("10")});
+
+    console.log("tx hash: ", tx.hash);
+    
+    const rc = await tx.wait();
+
+    // top level tx successful, internal transaction not successful
+    expect(rc.status).to.be.eq(1);
+  });
+
+  // 21. EOA -call w value→ SysAccountsCaller -send→ 0.0.800
+  it('should be able to make an internal SEND to account 0.0.800', async function() {
+
+    const tx = await callerContract.testSend(address800, {gasLimit: 1000000, value: ethers.parseEther("10")});
+
+    console.log("tx hash: ", tx.hash);
+    
+    const rc = await tx.wait();
+
+    // top level tx successful, internal transaction not successful
+    expect(rc.status).to.be.eq(1);
+  });
 });
