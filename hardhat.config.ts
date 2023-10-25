@@ -1,9 +1,35 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-toolbox";
+import '@openzeppelin/hardhat-upgrades';
 
+/** @type import('hardhat/config').HardhatUserConfig */
 const config: HardhatUserConfig = {
-  solidity: "0.8.19",
+  mocha: {
+    timeout: 3600000,
+    color: true,
+    failZero: Boolean(process.env.CI),
+    forbidOnly: Boolean(process.env.CI),
+    reporter: 'mocha-multi-reporters',
+    reporterOption: {
+      reporterEnabled: 'spec, mocha-junit-reporter',
+      mochaJunitReporterReporterOptions: {
+        mochaFile: 'test-results.[hash].xml',
+        includePending: true,
+        outputs: true,
+      },
+    },
+  },
+  solidity: {
+    version: '0.8.20',
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 500,
+      },
+    },
+  },
+  defaultNetwork: "besu_local",
   networks: {
     // hedera local node
     hedera_local: {
@@ -23,7 +49,7 @@ const config: HardhatUserConfig = {
     },
     // besu local node
     besu_local: {
-      url: "http://127.0.0.1:8545",
+      url: "http://127.0.0.1:8544",
       allowUnlimitedContractSize: true,
       blockGasLimit: 0x1fffffffffffff,
       gas: 1_000_000_000,
