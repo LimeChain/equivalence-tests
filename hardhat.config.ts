@@ -3,7 +3,7 @@ import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-toolbox";
 
 const config: HardhatUserConfig = {
-  solidity: "0.8.19",
+  solidity: "0.8.20",
   networks: {
     // hedera local node
     hedera_local: {
@@ -21,9 +21,19 @@ const config: HardhatUserConfig = {
         "0x2e1d968b041d84dd120a5860cee60cd83f9374ef527ca86996317ada3d0d03e7",
       ],
     },
+    // hedera local node
+    hedera_testnet: {
+      url: "http://127.0.0.1:7546",
+      timeout: 60_000,
+      chainId: 296,
+      accounts: [
+        // private keys
+        "0x96ee63a654bd9d07915b5a38d765366c54838848bf7fc32a9a981e3988dbb8f8",
+      ],
+    },
     // besu local node
     besu_local: {
-      url: "http://127.0.0.1:8545",
+      url: "http://127.0.0.1:8544",
       allowUnlimitedContractSize: true,
       blockGasLimit: 0x1fffffffffffff,
       gas: 1_000_000_000,

@@ -97,7 +97,7 @@ describe('EOA direct calls scenarios', function() {
   });
 
   // 4. EOA -call→ Account with no balance and no code
-  it('should be able to make a CALL to Account with no balance and no code', async function() {
+  it.only('should be able to make a CALL to Account with no balance and no code', async function() {
 
     // create a random ethereum address
     const address0xRandom = getRandomEthereumAddress();

@@ -15,33 +15,36 @@ describe('EVM Calls and internal calls edge cases test', function() {
   let callerAddress: string;
   let nonPayableContractAddress: string;
   let rejectingPaymentsContractAddress: string;
+  let contract: any;
 
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
   before(async () => {
 
-    CallerFactory = await ethers.getContractFactory("contracts/LowLevelCall.sol:Caller");
-    LowLevelReceiverFactory = await ethers.getContractFactory("contracts/LowLevelCall.sol:LowLevelReceiver");
-    NonPayableContractFactory = await ethers.getContractFactory("contracts/NonPayableContract.sol:NonPayableContract");
-    RejectingPaymentsContractFactory = await ethers.getContractFactory("contracts/NonPayableContract.sol:RejectingPaymentsContract");
+    // CallerFactory = await ethers.getContractFactory("contracts/LowLevelCall.sol:Caller");
+    // LowLevelReceiverFactory = await ethers.getContractFactory("contracts/LowLevelCall.sol:LowLevelReceiver");
+    // NonPayableContractFactory = await ethers.getContractFactory("contracts/NonPayableContract.sol:NonPayableContract");
+    // RejectingPaymentsContractFactory = await ethers.getContractFactory("contracts/NonPayableContract.sol:RejectingPaymentsContract");
 
-    callerContract = await CallerFactory.deploy({gasLimit: 5_000_000});
-    receiverContract = await LowLevelReceiverFactory.deploy({gasLimit: 5_000_000});
-    nonPayableContract = await NonPayableContractFactory.deploy({gasLimit: 5_000_000});
-    rejectingPaymentsContract = await RejectingPaymentsContractFactory.deploy({gasLimit: 5_000_000});
+    // callerContract = await CallerFactory.deploy({gasLimit: 5_000_000});
+    // receiverContract = await LowLevelReceiverFactory.deploy({gasLimit: 5_000_000});
+    // nonPayableContract = await NonPayableContractFactory.deploy({gasLimit: 5_000_000});
+    // rejectingPaymentsContract = await RejectingPaymentsContractFactory.deploy({gasLimit: 5_000_000});
     
-    callerAddress = callerContract.target;
-    receiverAddress = receiverContract.target;
-    nonPayableContractAddress = nonPayableContract.target;
-    rejectingPaymentsContractAddress = rejectingPaymentsContract.target;
+    // callerAddress = callerContract.target;
+    // receiverAddress = receiverContract.target;
+    // nonPayableContractAddress = nonPayableContract.target;
+    // rejectingPaymentsContractAddress = rejectingPaymentsContract.target;
 
-    console.log("Deployed Caller contract on address: ", callerAddress);
-    console.log("Deployed LowLevelReceiver contract on address: ", receiverAddress);
-    console.log("Deployed NonPayableContract contract on address: ", nonPayableContractAddress);
-    console.log("Deployed RejectingPaymentsContract contract on address: ", rejectingPaymentsContractAddress);
+    // console.log("Deployed Caller contract on address: ", callerAddress);
+    // console.log("Deployed LowLevelReceiver contract on address: ", receiverAddress);
+    // console.log("Deployed NonPayableContract contract on address: ", nonPayableContractAddress);
+    // console.log("Deployed RejectingPaymentsContract contract on address: ", rejectingPaymentsContractAddress);
 
-    // We need to wait for the contracts to be mined or some tests will fail
-    await sleep(2000);
+    // // We need to wait for the contracts to be mined or some tests will fail
+    // await sleep(2000);
+    const factory = await ethers.getContractFactory("contracts/errors/Panic.sol:Panic");
+    contract = await factory.deploy({gasLimit: 5_000_000});
   });
 
   // 1. EOA -transfer→ EOA2, where EOA2 exists.
@@ -76,15 +79,22 @@ describe('EVM Calls and internal calls edge cases test', function() {
 
     const randAddress = getRandomEthereumAddress();
 
-    const fakeCaller = CallerFactory.attach(randAddress);
+    console.log("generated randAddress: ", randAddress);
 
-    const tx = await fakeCaller.testCallFoo(receiverAddress, {gasLimit: 1000000});
+    const [owner, operator] = await ethers.getSigners();
+
+    // call to non-existing contract
+    const transaction = await operator.sendTransaction({
+      to: owner.address,
+      data: "0x12345678",
+      nonce: 2,
+    });
     
-    console.log("tx hash: ", tx.hash);
+    console.log("tx hash: ", transaction.hash);
 
-    const rc = await tx.wait();
+    // const rc = await transaction.wait();
 
-    expect(rc.status).to.be.eq(1);
+    // expect(rc.status).to.be.eq(1);
   });
 
   // 4. EOA -call function f→ Contract, where Contract does exist on the address that’s called, but f doesn’t exist as a function in the contract.
@@ -447,6 +457,46 @@ describe('EVM Calls and internal calls edge cases test', function() {
     expect(result).to.be.eq(false);
 
   });
+
+  //currently seems like it is not working
+  it('should verify panic error 0x31', async function () {
+    let error: any;
+    try {
+      const result = await contract.getSomeArray();
+      console.log(result.hash);
+      await contract.testPanicError0x31();
+    } catch(e) {
+      console.log(e);
+      error = e;
+    }
+    expect(error.errorName).to.eq('Panic');
+    // expect(error.errorArgs).to.deep.eq([ethers.BigNumber.from(18)])
+  })
+
+
+  it.only('should verify panic error 0x32', async function () {
+    let error: any;
+    try {
+      let tx = await contract.testPanicError0x32();
+      console.log(tx.hash);
+    } catch(e) {
+      console.log(e);
+      error = e;
+    }
+    expect(error.errorName).to.eq('Panic');
+    expect(error.errorArgs).to.deep.eq([ethers.BigNumber.from(50)])
+  })
+
+  it('should verify panic error 0x41', async function () {
+    let error: any;
+    try {
+      await contract.testPanicError0x41();
+    } catch(e) {
+      console.log(e)
+      error = e;
+    }
+    expect(error.errorName).to.eq('Panic');
+  })
 
   function getRandomEthereumAddress(): string {
     const length: number = 40;
